@@ -11,18 +11,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun AiOrb(
     modifier: Modifier = Modifier,
+    state: Any? = null,
+    baseSize: Dp = 200.dp,
     isListening: Boolean = false
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "orb")
     
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.8f,
-        targetValue = if (isListening) 1.2f else 1.0f,
+        targetValue = if (isListening || state != null) 1.2f else 1.0f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -31,7 +34,7 @@ fun AiOrb(
     )
 
     Box(
-        modifier = modifier.size(200.dp),
+        modifier = modifier.size(baseSize),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
