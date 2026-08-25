@@ -1,56 +1,63 @@
 package com.rameshai.network
 
+import com.google.gson.annotations.SerializedName
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.Query
+import java.util.concurrent.TimeUnit
 
-/**
- * All AI / web-search / image-model calls go through YOUR backend.
- * The app never talks to OpenAI/Anthropic/etc. directly and never
- * embeds a provider API key. The backend is responsible for:
- *   - holding provider credentials
- *   - deciding which tool(s) to invoke (AI orchestrator, section 18)
- *   - returning whether web search was actually performed + sources
- */
+data class GeminiPart(
+    @SerializedName("text") val text: String
+)
+
+data class GeminiContent(
+    @SerializedName("parts") val parts: List<GeminiPart>,
+    @SerializedName("role") val role: String? = null
+)
+
+data class GeminiRequest(
+    @SerializedName("contents") val contents: List<GeminiContent>
+)
+
+data class GeminiCandidate(
+    @SerializedName("content") val content: GeminiContent?
+)
+
+data class GeminiResponse(
+    @SerializedName("candidates") val candidates: List<GeminiCandidate>?
+)
+
 interface RameshApiService {
-
-    @POST("v1/chat")
-    suspend fun sendChat(@Body request: ChatRequest): ChatResponse
-
-    @POST("v1/search")
-    suspend fun webSearch(@Body request: SearchRequest): SearchResponse
-
-    @POST("v1/vision")
-    suspend fun analyzeImage(@Body request: VisionRequest): VisionResponse
-
-    @POST("v1/document")
-    suspend fun summarizeDocument(@Body request: DocumentRequest): DocumentResponse
+    @POST("v1beta/models/gemini-1.5-flash:generateContent")
+    suspend fun generateGeminiContent(
+        @Query("key") apiKey: String,
+        @Body request: GeminiRequest
+    ): GeminiResponse
 }
 
-data class ChatRequest(
-    val conversationId: String,
-    val mode: String,
-    val message: String,
-    val history: List<ChatTurn>,
-    val allowWebSearch: Boolean,
-    val language: String = "auto" // "hi", "en", or "auto" for Hinglish
-)
+object ApiClient {
+    private const val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/"
 
-data class ChatTurn(val role: String, val content: String)
+    private val logging = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
 
-data class ChatResponse(
-    val reply: String,
-    val usedWebSearch: Boolean,
-    val sources: List<SourceDto> = emptyList(),
-    val isCodeHeavy: Boolean = false
-)
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(logging)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
 
-data class SourceDto(val title: String, val url: String, val snippet: String)
-
-data class SearchRequest(val query: String)
-data class SearchResponse(val results: List<SourceDto>)
-
-data class VisionRequest(val imageBase64: String, val prompt: String)
-data class VisionResponse(val description: String, val extractedText: String? = null)
-
-data class DocumentRequest(val fileBase64: String, val mimeType: String, val question: String?)
-data class DocumentResponse(val summary: String)
+    val apiService: RameshApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(GEMINI_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(RameshApiService::class.java)
+    }
+}
