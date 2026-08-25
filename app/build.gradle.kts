@@ -39,7 +39,7 @@ android {
         jvmTarget = "17"
         freeCompilerArgs += listOf(
             "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true"
+            "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24"
         )
     }
     buildFeatures {
@@ -66,6 +66,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.7.7")
     
     // Retrofit & OkHttp
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
