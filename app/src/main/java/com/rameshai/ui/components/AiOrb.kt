@@ -18,6 +18,21 @@ import androidx.compose.ui.unit.dp
 fun AiOrb(
     modifier: Modifier = Modifier,
     state: Any? = null,
+    baseSize: Int = 200,
+    isListening: Boolean = false
+) {
+    AiOrb(
+        modifier = modifier,
+        state = state,
+        baseSize = baseSize.dp,
+        isListening = isListening
+    )
+}
+
+@Composable
+fun AiOrb(
+    modifier: Modifier = Modifier,
+    state: Any? = null,
     baseSize: Dp = 200.dp,
     isListening: Boolean = false
 ) {
